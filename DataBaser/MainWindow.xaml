@@ -1,0 +1,93 @@
+﻿<Window x:Class="DataBaser.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DataBaser"
+        mc:Ignorable="d"
+        Title="Office Ware Databaser"
+        Height="450"
+        Width="800"
+        WindowState="Maximized"
+    >
+    <DockPanel>
+        <Menu
+            DockPanel.Dock="Top"    
+        >
+            <MenuItem
+                Header="Файл"    
+            >
+                <MenuItem
+                    Header="Создать базу данных"    
+                    Click="CreateDBHandler"
+                />
+            </MenuItem>
+            <MenuItem
+                Header="База данных"    
+            >
+                <MenuItem
+                    Header="Создать таблицу"    
+                    Click="CreateTableHandler"
+                />
+            </MenuItem>
+            <MenuItem
+                Header="Таблица"    
+            >
+                <MenuItem
+                    Header="Добавить запись"    
+                    Click="InsertRecordHandler"
+                />
+                <MenuItem
+                    Header="Получить записи"    
+                    Click="GetRecordsHandler"
+                />
+                <MenuItem
+                    Header="Обновить запись"    
+                    Click="UpdateRecordHandler"
+                />
+                <MenuItem
+                    Header="Удалить запись"    
+                    Click="DeleteRecordHandler"
+                />
+            </MenuItem>
+        </Menu>
+        <DockPanel
+            DockPanel.Dock="Left"       
+        >
+            <StackPanel
+                x:Name="tables"
+                DockPanel.Dock="Left"
+                Width="250"
+                Background="Red"
+            >
+                
+            </StackPanel>
+            <Grid
+                x:Name="tableRecords"
+                ShowGridLines="True"
+            >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Text="asd"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                />
+            </Grid>
+        </DockPanel>
+    </DockPanel>
+</Window>
