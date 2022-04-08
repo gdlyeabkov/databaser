@@ -132,21 +132,61 @@
                                 Text="Добавить таблицу"
                             />
                         </StackPanel>
+                        <StackPanel
+                            Orientation="Horizontal"
+                            MouseLeftButtonUp="OpenRelationShipChartHandler"
+                        >
+                            <materialDesign:PackIcon
+                                Margin="15"
+                                Kind="RelationManyToMany"    
+                            />
+                            <TextBlock
+                                Margin="15"
+                                Text="Связи между таблицами"
+                            />
+                        </StackPanel>
                     </StackPanel>
                     <ScrollViewer
                         x:Name="tableScroller"
                         HorizontalScrollBarVisibility="Visible"
                         VerticalScrollBarVisibility="Visible"
                     >
-                        <Grid
-                            x:Name="tableRecords"
-                            ShowGridLines="True"
+                        <TabControl
+                            x:Name="article"    
                         >
-                            <Grid.ColumnDefinitions>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                            </Grid.RowDefinitions>
-                        </Grid>
+                            <TabItem
+                                Visibility="Collapsed"    
+                            >
+                                <Grid
+                                    x:Name="tableRecords"
+                                    ShowGridLines="True"
+                                >
+                                    <Grid.ColumnDefinitions>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                    </Grid.RowDefinitions>
+                                </Grid>
+                            </TabItem>
+                            <TabItem
+                                Visibility="Collapsed"    
+                            >
+                                <StackPanel
+                                    HorizontalAlignment="Left"    
+                                >
+                                    <ToggleButton
+                                        Width="175"
+                                        Content="Задать отношение"    
+                                        Click="SetRelationShipHandler"
+                                    />
+                                    <Canvas
+                                        x:Name="relationShip"    
+                                        Background="AliceBlue"
+                                        MouseMove="MoveRelationShipHandler"    
+                                        MouseUp="ResetRelationShipHandler"    
+                                    />
+                                </StackPanel>
+                            </TabItem>
+                        </TabControl>
                     </ScrollViewer>
                 </DockPanel>
             </TabItem>

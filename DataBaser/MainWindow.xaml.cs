@@ -17,6 +17,7 @@ using System.Data.SQLite;
 using System.Speech.Synthesis;
 using MaterialDesignThemes.Wpf;
 using System.Collections;
+using System.Windows.Controls.Primitives;
 
 namespace DataBaser
 {
@@ -31,13 +32,15 @@ namespace DataBaser
         public string currentTable = "";
         public string currentTableMode = "";
         public bool isDetectChanges = false;
+        public bool isRelationSet = false;
+        public Line relation = null;
 
         public MainWindow()
         {
             InitializeComponent();
 
             Initialize();
-        
+
         }
 
         public void Initialize()
@@ -113,7 +116,7 @@ namespace DataBaser
             command.ExecuteNonQuery();
         }
 
-        public void ConnectToDB (string path) {
+        public void ConnectToDB(string path) {
             string rawConfig = "Data Source=" + path + ";Version=3;";
             connection = new SQLiteConnection(rawConfig);
             connection.Open();
@@ -209,7 +212,7 @@ namespace DataBaser
             DropTable(tableName);
         }
 
-        public void DropTable (string tableName)
+        public void DropTable(string tableName)
         {
             string sql = "DROP TABLE " + tableName;
             SQLiteCommand command = new SQLiteCommand(sql, connection);
@@ -248,8 +251,8 @@ namespace DataBaser
                 bool isTextType = rawDataTypeName == "TEXT";
                 bool isIntegerType = rawDataTypeName == "INTEGER";
                 bool isBooleanType = rawDataTypeName == "BOOLEAN";
-                bool isDateType = rawDataTypeName == "DATE";
-                if(isTextType)
+                bool isDateType = rawDataTypeName == "DATETIME";
+                if (isTextType)
                 {
                     columnType = "Текстовый";
                 }
@@ -319,7 +322,7 @@ namespace DataBaser
             tableColumnType.SelectedIndex = 0;
             tableColumnTypeItem = new ComboBoxItem();
             tableColumnTypeItem.Content = "Дата";
-            tableColumnTypeItem.DataContext = "DATE";
+            tableColumnTypeItem.DataContext = "DATETIME";
             tableColumnType.Items.Add(tableColumnTypeItem);
             tableColumnType.SelectedIndex = 0;
             tableRecords.Children.Add(tableColumnType);
@@ -334,7 +337,7 @@ namespace DataBaser
 
         }
 
-        public void SelectTableInEditModeHandler (object sender, RoutedEventArgs e)
+        public void SelectTableInEditModeHandler(object sender, RoutedEventArgs e)
         {
             MenuItem menuItem = ((MenuItem)(sender));
             ContextMenu menu = ((ContextMenu)(menuItem.Parent));
@@ -377,7 +380,7 @@ namespace DataBaser
                 Grid.SetColumn(tableColumnLabel, i);
             }
 
-            while(reader.Read())
+            while (reader.Read())
             {
                 tableRow = new RowDefinition();
                 tableRow.Height = new GridLength(35);
@@ -391,7 +394,7 @@ namespace DataBaser
                     bool isTextType = rawDataType == "TEXT";
                     bool isIntegerType = rawDataType == "INTEGER";
                     bool isBooleanType = rawDataType == "BOOLEAN";
-                    bool isDateType = rawDataType == "DATE";
+                    bool isDateType = rawDataType == "DATETIME";
                     if (isTextType)
                     {
                         dataItemContent = reader.GetString(dataItemCursor);
@@ -447,7 +450,7 @@ namespace DataBaser
                 bool isIntegerType = rawDataTypeName == "INTEGER";
                 bool isTextBlock = isTextType || isIntegerType;
                 bool isComboBox = rawDataTypeName == "BOOLEAN";
-                bool isDatePicker = rawDataTypeName == "DATE";
+                bool isDatePicker = rawDataTypeName == "DATETIME";
                 if (isTextBlock)
                 {
                     tableColumnBox = new TextBox();
@@ -477,7 +480,7 @@ namespace DataBaser
                 }
                 tableRecords.Children.Add(tableColumnBox);
                 Grid.SetRow(tableColumnBox, tableRecords.RowDefinitions.Count - 1);
-                Grid.SetColumn(tableColumnBox, i); 
+                Grid.SetColumn(tableColumnBox, i);
                 bool isId = i < 1;
                 if (isId)
                 {
@@ -491,7 +494,7 @@ namespace DataBaser
             DetectChanges();
         }
 
-        public void DetectChanges ()
+        public void DetectChanges()
         {
             isDetectChanges = true;
         }
@@ -516,7 +519,7 @@ namespace DataBaser
             SaveDB();
         }
 
-        public void SaveDBInConstructorMode ()
+        public void SaveDBInConstructorMode()
         {
             MessageBoxResult result = MessageBox.Show("При сохранении будет очищена вся таблица", "Сохранение", MessageBoxButton.OKCancel);
             switch (result)
@@ -635,7 +638,7 @@ namespace DataBaser
                             {
                                 string separator = "";
                                 string rawType = reader.GetDataTypeName(valuesCursor);
-                                bool isCircumQuotes = rawType == "TEXT" || rawType == "DATE";
+                                bool isCircumQuotes = rawType == "TEXT" || rawType == "DATETIME";
                                 if (isCircumQuotes)
                                 {
                                     separator = "\"";
@@ -694,7 +697,7 @@ namespace DataBaser
             isDetectChanges = false;
         }
 
-        public void SaveDB ()
+        public void SaveDB()
         {
             bool isConstructorMode = currentTableMode == "constructor";
             bool isEditMode = currentTableMode == "edit";
@@ -724,7 +727,7 @@ namespace DataBaser
             }
         }
 
-        public void AddColumnHandler (object sender, KeyEventArgs e)
+        public void AddColumnHandler(object sender, KeyEventArgs e)
         {
             Key currentKey = e.Key;
             Key enterKey = Key.Enter;
@@ -754,7 +757,7 @@ namespace DataBaser
                 tableColumnType.SelectedIndex = 0;
                 tableColumnTypeItem = new ComboBoxItem();
                 tableColumnTypeItem.Content = "Дата";
-                tableColumnTypeItem.DataContext = ((string)("DATE"));
+                tableColumnTypeItem.DataContext = ((string)("DATETIME"));
                 tableColumnType.Items.Add(tableColumnTypeItem);
                 tableColumnType.SelectedIndex = 0;
                 tableRecords.Children.Add(tableColumnType);
@@ -892,6 +895,147 @@ namespace DataBaser
             if (isConnectionOpened)
             {
                 connection.Close();
+            }
+        }
+
+        private void OpenRelationShipChartHandler(object sender, MouseButtonEventArgs e)
+        {
+            OpenRelationShipChart();
+        }
+
+        public void OpenRelationShipChart ()
+        {
+            relationShip.Children.Clear();
+            article.SelectedIndex = 1;
+            string sql = "SELECT name FROM sqlite_schema WHERE type = \'table\' AND name NOT LIKE \'sqlite_%\'";
+            SQLiteCommand command = new SQLiteCommand(sql, connection);
+            SQLiteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                string tableName = reader.GetString(0);
+                Rectangle table = new Rectangle();
+                table.Width = 100;
+                table.Height = 100;
+                VisualBrush tableBrush = new VisualBrush();
+                tableBrush.Stretch = Stretch.None;
+                StackPanel tableBrushContent = new StackPanel();
+                tableBrushContent.Orientation = Orientation.Horizontal;
+                tableBrushContent.Width = 100;
+                tableBrushContent.Height = 100;
+                tableBrushContent.Background = System.Windows.Media.Brushes.Red;
+                RadioButton tableBrushJoint = new RadioButton();
+                tableBrushJoint.Margin = new Thickness(5, 40, 5, 40);
+                TextBlock tableBrushLabel = new TextBlock();
+                tableBrushLabel.HorizontalAlignment = HorizontalAlignment.Center;
+                tableBrushLabel.Margin = new Thickness(5, 40, 5, 40);
+                tableBrushLabel.Text = tableName;
+                tableBrushContent.Children.Add(tableBrushJoint);
+                tableBrushContent.Children.Add(tableBrushLabel);
+                tableBrush.Visual = tableBrushContent;
+                table.Fill = tableBrush;
+                Canvas.SetLeft(table, 0);
+                Canvas.SetTop(table, 0);
+                relationShip.Children.Add(table);
+                table.MouseMove += MoveTableHandler;
+                table.MouseLeftButtonDown += StartDrawRelationHandler;
+                table.MouseLeftButtonUp += ResetRelationShipHandler;
+                tableBrushJoint.MouseLeftButtonDown += StartDrawRelationHandler;
+            };
+        }
+
+        public void StartDrawRelationHandler(object sender, MouseEventArgs e)
+        {
+            // RadioButton joint = ((RadioButton)(sender));
+            // StartDrawRelation(joint, e);
+            StartDrawRelation(e);
+        }
+
+        public void StartDrawRelation(MouseEventArgs e)
+        {
+            if (isRelationSet)
+            {
+                Point currentPoint = e.GetPosition(relationShip);
+                relation = new Line();
+                relation.X1 = currentPoint.X;
+                relation.Y1 = currentPoint.Y;
+                relation.X2 = currentPoint.X;
+                relation.Y2 = currentPoint.Y;
+                relationShip.Children.Add(relation);
+                relation.Stroke = System.Windows.Media.Brushes.Black;
+            }
+        }
+
+        public void MoveTableHandler (object sender, MouseEventArgs e)
+        {
+            Rectangle table = ((Rectangle)(sender));
+            MoveTableHandler(table, e);
+        }
+
+        public void MoveTableHandler(Rectangle table, MouseEventArgs e)
+        {
+            MouseButtonState leftMouseBtnState = e.LeftButton;
+            MouseButtonState isPressedMouseBtn = MouseButtonState.Pressed;
+            bool isLeftMouseBtnPressed = leftMouseBtnState == isPressedMouseBtn;
+            bool isCanMove = isLeftMouseBtnPressed && !isRelationSet;
+            if (isCanMove)
+            {
+                double offset = 5;
+                Point currentPosition = e.GetPosition(relationShip);
+                double coordX = currentPosition.X;
+                double coordY = currentPosition.Y;
+                double tableXCoord = coordX - offset;
+                double tableYCoord = coordY - offset;
+                Canvas.SetLeft(table, tableXCoord);
+                Canvas.SetTop(table, tableYCoord);
+            }
+        }
+
+        private void MoveRelationShipHandler(object sender, MouseEventArgs e)
+        {
+            MouseButtonState leftMouseBtnState = e.LeftButton;
+            MouseButtonState isPressedMouseBtn = MouseButtonState.Pressed;
+            bool isLeftMouseBtnPressed = leftMouseBtnState == isPressedMouseBtn;
+            bool isRelationEnabled = isLeftMouseBtnPressed && isRelationSet;
+            if (isRelationEnabled)
+            {
+                Point currentPosition = e.GetPosition(relationShip);
+                relation.X2 = currentPosition.X;
+                relation.Y2 = currentPosition.Y;
+            }
+        }
+
+        private void ResetRelationShipHandler(object sender, MouseButtonEventArgs e)
+        {
+            
+        }
+
+        private void SetRelationShipHandler(object sender, RoutedEventArgs e)
+        {
+            ToggleButton btn = ((ToggleButton)(sender));
+            isRelationSet = ((bool)(btn.IsChecked));
+            if (isRelationSet)
+            {
+                Point currentPoint = Mouse.GetPosition(relationShip);
+                isRelationSet = true;
+                relation = new Line();
+                relation.X1 = currentPoint.X;
+                relation.Y1 = currentPoint.Y;
+                relation.X2 = currentPoint.X;
+                relation.Y2 = currentPoint.Y;
+                relationShip.Children.Add(relation);
+                relation.Stroke = System.Windows.Media.Brushes.Black;
+            }
+            else
+            {
+                for (int i = 0; i < relationShip.Children.Count; i++)
+                {
+                    UIElement element = relationShip.Children[i];
+                    bool isRelation = element is Line;
+                    if (isRelation)
+                    {
+                        relationShip.Children.Remove(element);
+                    }
+                }
             }
         }
 
