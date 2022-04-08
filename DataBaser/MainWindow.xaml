@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DataBaser"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Office Ware Databaser"
         Height="450"
@@ -29,6 +30,10 @@
                     Header="Сохранить базу данных"    
                     Click="SaveDBHandler"
                 />
+                <MenuItem
+                    Header="Закрыть базу данных"    
+                    Click="CloseDBHandler"
+                />
             </MenuItem>
             <MenuItem
                 Header="База данных"    
@@ -42,53 +47,109 @@
                 Header="Таблица"    
             >
                 <MenuItem
-                    Header="Добавить запись"    
-                    Click="InsertRecordHandler"
-                />
-                <MenuItem
-                    Header="Получить записи"    
-                    Click="GetRecordsHandler"
-                />
-                <MenuItem
-                    Header="Обновить запись"    
-                    Click="UpdateRecordHandler"
-                />
-                <MenuItem
-                    Header="Удалить запись"    
-                    Click="DeleteRecordHandler"
-                />
-                <MenuItem
                     Header="Закрыть таблицу"    
                     Click="CloseTableHandler"
                 />
             </MenuItem>
         </Menu>
-        <DockPanel
-            DockPanel.Dock="Left"       
+        <TabControl
+            x:Name="screenControl"    
+            Background="Transparent"
+            BorderThickness="0"
         >
-            <StackPanel
-                x:Name="tables"
-                DockPanel.Dock="Left"
-                Width="250"
-                Background="Red"
+            <TabItem
                 Visibility="Collapsed"
             >
-                
-            </StackPanel>
-            <ScrollViewer
-                HorizontalScrollBarVisibility="Visible"
-                VerticalScrollBarVisibility="Visible"
-            >
-                <Grid
-                    x:Name="tableRecords"
-                    ShowGridLines="True"
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"    
                 >
-                    <Grid.ColumnDefinitions>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                    </Grid.RowDefinitions>
-                </Grid>
-            </ScrollViewer>
-        </DockPanel>
+                    <StackPanel
+                        Margin="15"    
+                        MouseLeftButtonUp="CreateDBHandler"    
+                    >
+                        <materialDesign:PackIcon
+                            Width="72"
+                            Height="72"
+                            Margin="5"
+                            HorizontalAlignment="Center"    
+                            Kind="Create"
+                        />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Margin="5"
+                            Text="Создать"    
+                        />
+                    </StackPanel>
+                    <StackPanel
+                        Margin="15"    
+                        MouseLeftButtonUp="OpenDBHandler"    
+                    >
+                        <materialDesign:PackIcon
+                            Width="72"
+                            Height="72"
+                            Margin="5"
+                            HorizontalAlignment="Center"    
+                            Kind="Import"
+                        />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Margin="5"
+                            Text="Открыть"    
+                        />
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem
+                Visibility="Collapsed"    
+            >
+                <DockPanel
+                    DockPanel.Dock="Left"       
+                >
+                    <StackPanel
+                        x:Name="aside"
+                        DockPanel.Dock="Left"
+                        Width="250"
+                        Background="Red"
+                        Visibility="Collapsed"
+                    >
+                        <StackPanel
+                            x:Name="tables"
+                        >
+
+                        </StackPanel>
+                        <StackPanel
+                            Orientation="Horizontal"
+                            MouseLeftButtonUp="OpenCreateTableDialogHandler"
+                        >
+                            <materialDesign:PackIcon
+                                Margin="15"
+                                Kind="Add"    
+                            />
+                            <TextBlock
+                                Margin="15"
+                                Text="Добавить таблицу"
+                            />
+                        </StackPanel>
+                    </StackPanel>
+                    <ScrollViewer
+                        x:Name="tableScroller"
+                        HorizontalScrollBarVisibility="Visible"
+                        VerticalScrollBarVisibility="Visible"
+                    >
+                        <Grid
+                            x:Name="tableRecords"
+                            ShowGridLines="True"
+                        >
+                            <Grid.ColumnDefinitions>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                            </Grid.RowDefinitions>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </Window>

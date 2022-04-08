@@ -30,6 +30,7 @@ namespace DataBaser
         public SpeechSynthesizer debugger;
         public string currentTable = "";
         public string currentTableMode = "";
+        public bool isDetectChanges = false;
 
         public MainWindow()
         {
@@ -116,7 +117,8 @@ namespace DataBaser
             string rawConfig = "Data Source=" + path + ";Version=3;";
             connection = new SQLiteConnection(rawConfig);
             connection.Open();
-            tables.Visibility = Visibility.Visible;
+            aside.Visibility = Visibility.Visible;
+            screenControl.SelectedIndex = 1;
         }
 
         private void GetRecordsHandler(object sender, RoutedEventArgs e)
@@ -191,9 +193,30 @@ namespace DataBaser
                 tableContextMenuItem.DataContext = "edit";
                 tableContextMenuItem.Click += SelectTableInEditModeHandler;
                 tableContextMenu.Items.Add(tableContextMenuItem);
-                table.ContextMenu = tableContextMenu;                
+                tableContextMenuItem = new MenuItem();
+                tableContextMenuItem.Header = "Удалить таблицу";
+                tableContextMenuItem.Click += DropTableHandler;
+                tableContextMenu.Items.Add(tableContextMenuItem);
+                table.ContextMenu = tableContextMenu;
             };
         }
+
+        public void DropTableHandler(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = ((MenuItem)(sender));
+            object tableData = menuItem.DataContext;
+            string tableName = ((string)(tableData));
+            DropTable(tableName);
+        }
+
+        public void DropTable (string tableName)
+        {
+            string sql = "DROP TABLE " + tableName;
+            SQLiteCommand command = new SQLiteCommand(sql, connection);
+            command.ExecuteNonQuery();
+            GetTables();
+        }
+
         public void SelectTableInConstructorModeHandler(object sender, RoutedEventArgs e)
         {
             MenuItem menuItem = ((MenuItem)(sender));
@@ -208,9 +231,7 @@ namespace DataBaser
 
         public void SelectTableInConstructorMode(string tableName)
         {
-            tableRecords.Children.Clear();
-            tableRecords.RowDefinitions.Clear();
-            tableRecords.ColumnDefinitions.Clear();
+            ClearArticleContent();
             string sql = "SELECT * FROM " + tableName;
             SQLiteCommand command = new SQLiteCommand(sql, connection);
             SQLiteDataReader reader = command.ExecuteReader();
@@ -222,16 +243,39 @@ namespace DataBaser
             tableRecords.RowDefinitions.Add(tableRow);
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                string columnType = reader.GetDataTypeName(i).ToString();
+                string columnType = "";
+                string rawDataTypeName = reader.GetDataTypeName(i);
+                bool isTextType = rawDataTypeName == "TEXT";
+                bool isIntegerType = rawDataTypeName == "INTEGER";
+                bool isBooleanType = rawDataTypeName == "BOOLEAN";
+                bool isDateType = rawDataTypeName == "DATE";
+                if(isTextType)
+                {
+                    columnType = "Текстовый";
+                }
+                else if (isIntegerType)
+                {
+                    columnType = "Числовой";
+                }
+                else if (isBooleanType)
+                {
+                    columnType = "Логический";
+                }
+                else if (isDateType)
+                {
+                    columnType = "Дата";
+                }
                 ColumnDefinition tableColumn = new ColumnDefinition();
                 tableColumn.Width = new GridLength(275);
                 tableRecords.ColumnDefinitions.Add(tableColumn);
                 ComboBox tableColumnTypeBox = new ComboBox();
+                tableColumnTypeBox.IsEnabled = false;
                 tableColumnTypeBox.HorizontalAlignment = HorizontalAlignment.Center;
                 tableColumnTypeBox.VerticalAlignment = VerticalAlignment.Center;
                 ComboBoxItem tableColumnTypeBoxItem = new ComboBoxItem();
                 tableColumnTypeBoxItem.Content = columnType;
-                tableColumnTypeBox.Items.Add(   tableColumnTypeBoxItem);
+                tableColumnTypeBoxItem.DataContext = ((string)(rawDataTypeName));
+                tableColumnTypeBox.Items.Add(tableColumnTypeBoxItem);
                 tableRecords.Children.Add(tableColumnTypeBox);
                 tableColumnTypeBox.SelectedIndex = 0;
                 Grid.SetRow(tableColumnTypeBox, 0);
@@ -261,10 +305,21 @@ namespace DataBaser
             tableColumnType.HorizontalAlignment = HorizontalAlignment.Center;
             tableColumnType.VerticalAlignment = VerticalAlignment.Center;
             ComboBoxItem tableColumnTypeItem = new ComboBoxItem();
-            tableColumnTypeItem.Content = "TEXT";
+            tableColumnTypeItem.Content = "Текстовый";
+            tableColumnTypeItem.DataContext = "TEXT";
             tableColumnType.Items.Add(tableColumnTypeItem);
             tableColumnTypeItem = new ComboBoxItem();
-            tableColumnTypeItem.Content = "INTEGER";
+            tableColumnTypeItem.Content = "Числовой";
+            tableColumnTypeItem.DataContext = "INTEGER";
+            tableColumnType.Items.Add(tableColumnTypeItem);
+            tableColumnTypeItem = new ComboBoxItem();
+            tableColumnTypeItem.Content = "Логический";
+            tableColumnTypeItem.DataContext = "BOOLEAN";
+            tableColumnType.Items.Add(tableColumnTypeItem);
+            tableColumnType.SelectedIndex = 0;
+            tableColumnTypeItem = new ComboBoxItem();
+            tableColumnTypeItem.Content = "Дата";
+            tableColumnTypeItem.DataContext = "DATE";
             tableColumnType.Items.Add(tableColumnTypeItem);
             tableColumnType.SelectedIndex = 0;
             tableRecords.Children.Add(tableColumnType);
@@ -291,11 +346,16 @@ namespace DataBaser
             SelectTableInEditMode(tableName);
         }
 
-        public void SelectTableInEditMode(string tableName)
+        public void ClearArticleContent()
         {
             tableRecords.Children.Clear();
             tableRecords.RowDefinitions.Clear();
             tableRecords.ColumnDefinitions.Clear();
+        }
+
+        public void SelectTableInEditMode(string tableName)
+        {
+            ClearArticleContent();
             string sql = "SELECT * FROM " + tableName;
             SQLiteCommand command = new SQLiteCommand(sql, connection);
             SQLiteDataReader reader = command.ExecuteReader();
@@ -317,12 +377,8 @@ namespace DataBaser
                 Grid.SetColumn(tableColumnLabel, i);
             }
 
-            // command = new SQLiteCommand(sql, connection);
-            // reader = command.ExecuteReader();
             while(reader.Read())
-            // for (int i = 0; i < reader.StepCount; i++)
             {
-                // reader.Read();
                 tableRow = new RowDefinition();
                 tableRow.Height = new GridLength(35);
                 tableRecords.RowDefinitions.Add(tableRow);
@@ -331,15 +387,44 @@ namespace DataBaser
                 {
                     dataItemCursor++;
                     string dataItemContent = "";
-                    if (reader.GetDataTypeName(dataItemCursor) == "TEXT")
+                    string rawDataType = reader.GetDataTypeName(dataItemCursor);
+                    bool isTextType = rawDataType == "TEXT";
+                    bool isIntegerType = rawDataType == "INTEGER";
+                    bool isBooleanType = rawDataType == "BOOLEAN";
+                    bool isDateType = rawDataType == "DATE";
+                    if (isTextType)
                     {
                         dataItemContent = reader.GetString(dataItemCursor);
                     }
-                    else if (reader.GetDataTypeName(dataItemCursor) == "INTEGER")
+                    else if (isIntegerType)
                     {
-                        // debugger.Speak("вижу число");
                         Int64 intData = reader.GetInt64(dataItemCursor);
                         dataItemContent = intData.ToString();
+                    }
+                    else if (isBooleanType)
+                    {
+                        bool boolData = reader.GetBoolean(dataItemCursor);
+                        if (boolData)
+                        {
+                            dataItemContent = "Да";
+                        }
+                        else
+                        {
+                            dataItemContent = "Нет";
+                        }
+                    }
+                    else if (isDateType)
+                    {
+                        String rawDateData = reader.GetString(dataItemCursor);
+                        try
+                        {
+                            DateTime parsedDate = DateTime.Parse(rawDateData);
+                            dataItemContent = parsedDate.ToLongDateString();
+                        }
+                        catch (FormatException)
+                        {
+                            MessageBox.Show("Вы заполнили не все поля", "Ошибка");
+                        }
                     }
                     TextBlock dataItem = new TextBlock();
                     dataItem.HorizontalAlignment = HorizontalAlignment.Center;
@@ -356,8 +441,40 @@ namespace DataBaser
             tableRecords.RowDefinitions.Add(tableRow);
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                string columnName = reader.GetName(i);
-                TextBox tableColumnBox = new TextBox();
+                UIElement tableColumnBox = null;
+                string rawDataTypeName = reader.GetDataTypeName(i);
+                bool isTextType = rawDataTypeName == "TEXT";
+                bool isIntegerType = rawDataTypeName == "INTEGER";
+                bool isTextBlock = isTextType || isIntegerType;
+                bool isComboBox = rawDataTypeName == "BOOLEAN";
+                bool isDatePicker = rawDataTypeName == "DATE";
+                if (isTextBlock)
+                {
+                    tableColumnBox = new TextBox();
+                    TextBox dataItemLabel = tableColumnBox as TextBox;
+                    dataItemLabel.TextChanged += DetectChangesHandler;
+                }
+                else if (isComboBox)
+                {
+                    tableColumnBox = new ComboBox();
+                    ComboBox dataItemSelector = tableColumnBox as ComboBox;
+                    dataItemSelector.HorizontalAlignment = HorizontalAlignment.Center;
+                    dataItemSelector.VerticalAlignment = VerticalAlignment.Center;
+                    ComboBoxItem dataItemSelectorItem = new ComboBoxItem();
+                    dataItemSelectorItem.Content = "Да";
+                    dataItemSelectorItem.DataContext = "TRUE";
+                    dataItemSelector.Items.Add(dataItemSelectorItem);
+                    dataItemSelectorItem = new ComboBoxItem();
+                    dataItemSelectorItem.Content = "Нет";
+                    dataItemSelectorItem.DataContext = "FALSE";
+                    dataItemSelector.Items.Add(dataItemSelectorItem);
+                    dataItemSelector.SelectedIndex = 0;
+                }
+                else if (isDatePicker)
+                {
+                    tableColumnBox = new DatePicker();
+                    DatePicker dataItemPicker = tableColumnBox as DatePicker;
+                }
                 tableRecords.Children.Add(tableColumnBox);
                 Grid.SetRow(tableColumnBox, tableRecords.RowDefinitions.Count - 1);
                 Grid.SetColumn(tableColumnBox, i); 
@@ -367,7 +484,16 @@ namespace DataBaser
                     tableColumnBox.IsEnabled = false;
                 }
             }
+        }
 
+        private void DetectChangesHandler(object sender, TextChangedEventArgs e)
+        {
+            DetectChanges();
+        }
+
+        public void DetectChanges ()
+        {
+            isDetectChanges = true;
         }
 
         public void SelectTableHandler(object sender, RoutedEventArgs e)
@@ -390,113 +516,195 @@ namespace DataBaser
             SaveDB();
         }
 
-        public void SaveDB ()
+        public void SaveDBInConstructorMode ()
         {
-            if (currentTableMode == "constructor")
+            MessageBoxResult result = MessageBox.Show("При сохранении будет очищена вся таблица", "Сохранение", MessageBoxButton.OKCancel);
+            switch (result)
             {
-                string sql = "DROP TABLE " + currentTable;
-                SQLiteCommand command = new SQLiteCommand(sql, connection);
-                command.ExecuteNonQuery();
-                string columns = "";
-                foreach (UIElement tableRecord in tableRecords.Children)
-                {
-                    bool isColumns = Grid.GetRow(tableRecord) == 1;
-                    bool isAdded = tableRecord is TextBlock;
-                    bool isAddedColumns = isColumns && isAdded;
-                    if (isAddedColumns)
+                case MessageBoxResult.OK:
+                    string sql = "DROP TABLE " + currentTable;
+                    SQLiteCommand command = new SQLiteCommand(sql, connection);
+                    command.ExecuteNonQuery();
+                    string columns = "";
+                    foreach (UIElement tableRecord in tableRecords.Children)
                     {
-
-                        string selectedType = "";
-                        int columnTypeIndex = Grid.GetColumn(tableRecord);
-                        foreach (UIElement someTableRecord in tableRecords.Children)
+                        bool isColumns = Grid.GetRow(tableRecord) == 1;
+                        bool isAdded = tableRecord is TextBlock;
+                        bool isAddedColumns = isColumns && isAdded;
+                        if (isAddedColumns)
                         {
-                            if (someTableRecord is ComboBox && Grid.GetColumn(someTableRecord) == columnTypeIndex && Grid.GetRow(someTableRecord) == 0)
+
+                            string selectedType = "";
+                            int columnTypeIndex = Grid.GetColumn(tableRecord);
+                            foreach (UIElement someTableRecord in tableRecords.Children)
                             {
-                                ComboBox someTableRecordBox = ((ComboBox)(someTableRecord));
-                                ComboBoxItem selectedsomeTableRecordBoxItem = ((ComboBoxItem)(someTableRecordBox.Items[someTableRecordBox.SelectedIndex]));
-                                string selectedsomeTableRecordBoxItemContent = ((string)(selectedsomeTableRecordBoxItem.Content));
-                                selectedType = " " + selectedsomeTableRecordBoxItemContent;
-                                break;
-                            }
-                        }
-
-                        TextBlock tableRecordColumn = tableRecord as TextBlock;
-                        string tableRecordColumnContent = tableRecordColumn.Text;
-                        bool isNotId = tableRecordColumnContent != "_id";
-                        int tableRecordColumnContentLength = tableRecordColumnContent.Length;
-                        bool isColumnNameExists = tableRecordColumnContentLength >= 1;
-                        bool isTableRecordColumnSetted = isColumnNameExists && isNotId;
-                        if (isTableRecordColumnSetted)
-                        {
-                            columns += tableRecordColumn.Text + selectedType + ", ";
-
-                        }
-                    }
-                }
-                columns = columns.Substring(0, columns.Length - 2);
-                sql = "CREATE TABLE IF NOT EXISTS " + currentTable + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, " + columns + ")";
-                command = new SQLiteCommand(sql, connection);
-                command.ExecuteNonQuery();
-            }
-            else if (currentTableMode == "edit")
-            {
-                string fields = "";
-                string sql = "SELECT * FROM " + currentTable;
-                SQLiteCommand command = new SQLiteCommand(sql, connection);
-                SQLiteDataReader reader = command.ExecuteReader();
-                int fieldCursor = -1;
-                for (int i = 0; i < reader.FieldCount; i++)
-                {
-                    fieldCursor++;
-                    string field = reader.GetName(fieldCursor);
-                    bool isNotId = field != "_id";
-                    if (isNotId)
-                    {
-                        fields += field;
-                        fields += ", ";
-                    }
-                }
-                fields = fields.Substring(0, fields.Length - 2);
-                List<int> detectedRecords = new List<int>();
-                int recordsCursor = 1;
-                foreach (UIElement tableRecord in tableRecords.Children)
-                {
-                    bool isRows = Grid.GetRow(tableRecord) == tableRecords.RowDefinitions.Count - 1;
-                    bool isRecord = !(detectedRecords.Contains(Grid.GetRow(tableRecord)));
-                    bool isAddedRows = isRows && isRecord;
-                    if (isAddedRows)
-                    {
-                        detectedRecords.Add(Grid.GetRow(tableRecord));
-                        recordsCursor++;
-                        int row = Grid.GetRow(tableRecord);
-                        string values = "";
-                        int valuesCursor = -1;
-                        foreach (UIElement record in tableRecords.Children)
-                        {
-                            if (row == Grid.GetRow(record) && record is TextBox)
-                            {
-                                valuesCursor++;
-                                bool isNotId = valuesCursor >= 1;
-                                if (isNotId)
+                                if (someTableRecord is ComboBox && Grid.GetColumn(someTableRecord) == columnTypeIndex && Grid.GetRow(someTableRecord) == 0)
                                 {
-                                    string separator = "";
-                                    string rawType = reader.GetDataTypeName(valuesCursor);
-                                    bool isCircumQuotes = rawType == "TEXT";
-                                    if (isCircumQuotes)
-                                    {
-                                        separator = "\"";
-                                    }
-                                    TextBox recordBox = record as TextBox;
-                                    values += separator + recordBox.Text + separator + ", ";
+                                    ComboBox someTableRecordBox = ((ComboBox)(someTableRecord));
+                                    ComboBoxItem selectedsomeTableRecordBoxItem = ((ComboBoxItem)(someTableRecordBox.Items[someTableRecordBox.SelectedIndex]));
+                                    string selectedsomeTableRecordBoxItemContent = ((string)(selectedsomeTableRecordBoxItem.DataContext));
+                                    selectedType = " " + selectedsomeTableRecordBoxItemContent;
+                                    break;
                                 }
                             }
+
+                            TextBlock tableRecordColumn = tableRecord as TextBlock;
+                            string tableRecordColumnContent = tableRecordColumn.Text;
+                            bool isNotId = tableRecordColumnContent != "_id";
+                            int tableRecordColumnContentLength = tableRecordColumnContent.Length;
+                            bool isColumnNameExists = tableRecordColumnContentLength >= 1;
+                            bool isTableRecordColumnSetted = isColumnNameExists && isNotId;
+                            if (isTableRecordColumnSetted)
+                            {
+                                columns += tableRecordColumn.Text + selectedType + ", ";
+
+                            }
                         }
-                        values = values.Substring(0, values.Length - 2);
-                        sql = "INSERT INTO " + currentTable + " (" + fields + ") VALUES (" + values + ")";
-                        command = new SQLiteCommand(sql, connection);
+                    }
+                    int columnsLength = columns.Length;
+                    bool isLengthExists = columnsLength >= 1;
+                    if (isLengthExists)
+                    {
+                        columns = ", " + columns;
+                        columnsLength = columns.Length;
+                        int columnsCutLength = columnsLength - 2;
+                        columns = columns.Substring(0, columnsCutLength);
+                    }
+                    sql = "CREATE TABLE IF NOT EXISTS " + currentTable + " (_id INTEGER PRIMARY KEY AUTOINCREMENT" + columns + ")";
+                    command = new SQLiteCommand(sql, connection);
+                    try
+                    {
                         command.ExecuteNonQuery();
                     }
+                    catch
+                    {
+                        MessageBox.Show("Вы заполнили не все поля", "Ошибка");
+                    }
+                    break;
+            }
+            isDetectChanges = false;
+        }
+
+        public void SaveDBInEditMode()
+        {
+            string fields = "";
+            string sql = "SELECT * FROM " + currentTable;
+            SQLiteCommand command = new SQLiteCommand(sql, connection);
+            SQLiteDataReader reader = command.ExecuteReader();
+            int fieldCursor = -1;
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                fieldCursor++;
+                string field = reader.GetName(fieldCursor);
+                bool isNotId = field != "_id";
+                if (isNotId)
+                {
+                    fields += field;
+                    fields += ", ";
                 }
+            }
+            fields = fields.Substring(0, fields.Length - 2);
+            List<int> detectedRecords = new List<int>();
+            int recordsCursor = 1;
+            foreach (UIElement tableRecord in tableRecords.Children)
+            {
+                bool isRows = Grid.GetRow(tableRecord) == tableRecords.RowDefinitions.Count - 1;
+                bool isRecord = !(detectedRecords.Contains(Grid.GetRow(tableRecord)));
+                bool isAddedRows = isRows && isRecord;
+                if (isAddedRows)
+                {
+                    detectedRecords.Add(Grid.GetRow(tableRecord));
+                    recordsCursor++;
+                    int row = Grid.GetRow(tableRecord);
+                    string values = "";
+                    int valuesCursor = -1;
+                    foreach (UIElement record in tableRecords.Children)
+                    {
+                        int currentRow = Grid.GetRow(record);
+                        bool isRowsMatches = row == currentRow;
+                        bool isTextBox = record is TextBox;
+                        bool isComboBox = record is ComboBox;
+                        bool isDatePicker = record is DatePicker;
+                        bool isDetectedType = isTextBox || isComboBox || isDatePicker;
+                        bool isCanGetValue = isRowsMatches && isDetectedType;
+                        if (isCanGetValue)
+                        {
+                            valuesCursor++;
+                            bool isNotId = valuesCursor >= 1;
+                            if (isNotId)
+                            {
+                                string separator = "";
+                                string rawType = reader.GetDataTypeName(valuesCursor);
+                                bool isCircumQuotes = rawType == "TEXT" || rawType == "DATE";
+                                if (isCircumQuotes)
+                                {
+                                    separator = "\"";
+                                }
+                                string recordBoxContent = "";
+                                if (isTextBox)
+                                {
+                                    TextBox recordBox = record as TextBox;
+                                    recordBoxContent = recordBox.Text;
+                                }
+                                else if (isComboBox)
+                                {
+                                    ComboBox recordBox = record as ComboBox;
+                                    int recordBoxSelectedIndex = recordBox.SelectedIndex;
+                                    ItemCollection recordBoxItems = recordBox.Items;
+                                    ComboBoxItem recordBoxSelectedItem = ((ComboBoxItem)(recordBoxItems[recordBoxSelectedIndex]));
+                                    object recordBoxSelectedItemData = recordBoxSelectedItem.DataContext;
+                                    recordBoxContent = ((string)(recordBoxSelectedItemData));
+                                }
+                                else if (isDatePicker)
+                                {
+                                    DatePicker recordBox = record as DatePicker;
+                                    // object recordBoxData = recordBox.DataContext;
+                                    // recordBoxContent = ((string)(recordBoxData));
+                                    DateTime? selectedDate = ((DateTime?)(recordBox.SelectedDate));
+                                    bool isDateSelected = selectedDate != null;
+                                    if (isDateSelected)
+                                    {
+                                        DateTime date = selectedDate.Value;
+                                        // ((DateTime?)(recordBox.SelectedDate));
+                                        // recordBoxContent = date.ToLongDateString();
+                                        // recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day + " 00:00:00.000";
+                                        // recordBoxContent = date.Day + "/" + date.Month + "/" + date.Year;
+                                        recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day + " 10:05:23.187";
+                                        // recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day;
+                                    }
+                                }
+                                values += separator + recordBoxContent + separator + ", ";
+                            }
+                        }
+                    }
+                    values = values.Substring(0, values.Length - 2);
+                    sql = "INSERT INTO " + currentTable + " (" + fields + ") VALUES (" + values + ")";
+                    command = new SQLiteCommand(sql, connection);
+                    try
+                    {
+                        command.ExecuteNonQuery();
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Вы заполнили не все поля", "Ошибка");
+                    }
+                }
+            }
+            SelectTableInEditMode(currentTable);
+            isDetectChanges = false;
+        }
+
+        public void SaveDB ()
+        {
+            bool isConstructorMode = currentTableMode == "constructor";
+            bool isEditMode = currentTableMode == "edit";
+            if (isConstructorMode)
+            {
+                SaveDBInConstructorMode();
+            }
+            else if (isEditMode)
+            {
+                SaveDBInEditMode();
             }
         }
 
@@ -523,16 +731,30 @@ namespace DataBaser
             bool isEnterKey = currentKey == enterKey;
             if (isEnterKey)
             {
+
+                isDetectChanges = true;
+
                 TextBox column = ((TextBox)(sender));
 
                 ComboBox tableColumnType = new ComboBox();
                 tableColumnType.HorizontalAlignment = HorizontalAlignment.Center;
                 tableColumnType.VerticalAlignment = VerticalAlignment.Center;
                 ComboBoxItem tableColumnTypeItem = new ComboBoxItem();
-                tableColumnTypeItem.Content = "TEXT";
+                tableColumnTypeItem.Content = "Текстовый";
+                tableColumnTypeItem.DataContext = ((string)("TEXT"));
                 tableColumnType.Items.Add(tableColumnTypeItem);
                 tableColumnTypeItem = new ComboBoxItem();
-                tableColumnTypeItem.Content = "INTEGER";
+                tableColumnTypeItem.Content = "Числовой";
+                tableColumnTypeItem.DataContext = ((string)("INTEGER"));
+                tableColumnType.Items.Add(tableColumnTypeItem);
+                tableColumnTypeItem = new ComboBoxItem();
+                tableColumnTypeItem.Content = "Логический";
+                tableColumnTypeItem.DataContext = ((string)("BOOLEAN"));
+                tableColumnType.Items.Add(tableColumnTypeItem);
+                tableColumnType.SelectedIndex = 0;
+                tableColumnTypeItem = new ComboBoxItem();
+                tableColumnTypeItem.Content = "Дата";
+                tableColumnTypeItem.DataContext = ((string)("DATE"));
                 tableColumnType.Items.Add(tableColumnTypeItem);
                 tableColumnType.SelectedIndex = 0;
                 tableRecords.Children.Add(tableColumnType);
@@ -541,10 +763,18 @@ namespace DataBaser
 
                 TextBlock savedColumn = new TextBlock();
                 Grid.SetRow(savedColumn, 1);
-                Grid.SetColumn(savedColumn, Grid.GetColumn(column));
+                int columnIndex = Grid.GetColumn(column);
+                Grid.SetColumn(savedColumn, columnIndex);
                 savedColumn.HorizontalAlignment = HorizontalAlignment.Center;
                 savedColumn.VerticalAlignment = VerticalAlignment.Center;
                 savedColumn.Text = column.Text;
+                ContextMenu savedColumnContextMenu = new ContextMenu();
+                MenuItem savedColumnContextMenuItem = new MenuItem();
+                savedColumnContextMenuItem.Header = "Удалить";
+                savedColumnContextMenuItem.DataContext = ((int)(columnIndex));
+                savedColumnContextMenuItem.Click += RemoveColumnHandler;
+                savedColumnContextMenu.Items.Add(savedColumnContextMenuItem);
+                savedColumn.ContextMenu = savedColumnContextMenu;
                 tableRecords.Children.Add(savedColumn);
                 ColumnDefinition columnDefinition = new ColumnDefinition();
                 columnDefinition.Width = new GridLength(275);
@@ -555,6 +785,8 @@ namespace DataBaser
                 tableRecords.Children.Add(newTableColumn);
                 newTableColumn.KeyUp += AddColumnHandler;
                 tableRecords.Children.Remove(column);
+                tableScroller.ScrollToRightEnd();
+                newTableColumn.Focus();
             }
         }
 
@@ -563,13 +795,41 @@ namespace DataBaser
             bool isTableOpened = currentTable.Length >= 1;
             if (isTableOpened)
             {
-                currentTable = "";
-                currentTableMode = "";
-                tableRecords.Children.Clear();
-                tableRecords.RowDefinitions.Clear();
-                tableRecords.ColumnDefinitions.Clear();
+                if (isDetectChanges)
+                {
+                    MessageBoxResult result = MessageBox.Show("Вы собираетесь закрыть несохраненные изменения. Сохранить?", "Сохранение", MessageBoxButton.OKCancel);
+                    switch (result)
+                    {
+                        case MessageBoxResult.OK:
+                            bool isConstructorMode = currentTableMode == "constructor";
+                            bool isEditMode = currentTableMode == "edit";
+                            if (isConstructorMode)
+                            {
+                                SaveDBInConstructorMode();
+                            }
+                            else if (isEditMode)
+                            {
+                                SaveDBInEditMode();
+                            }
+                            isDetectChanges = false;
+                            CloseTable();
+                            break;
+                    }
+                }
+                else
+                {
+                    CloseTable();
+                }
             }
         }
+
+        public void CloseTable()
+        {
+            currentTable = "";
+            currentTableMode = "";
+            ClearArticleContent();
+        }
+
         public void RemoveColumnHandler(object sender, RoutedEventArgs e)
         {
             MenuItem menuItem = ((MenuItem)(sender));
@@ -579,14 +839,60 @@ namespace DataBaser
 
         public void RemoveColumn(int column)
         {
-            for (int i = 0; i < tableRecords.Children.Count; i++)
+            List<UIElement> records = new List<UIElement>();
+            UIElementCollection tableItems = tableRecords.Children;
+            int countTableItems = tableItems.Count;
+            for (int i = 0; i < countTableItems; i++)
             {
-                if (Grid.GetColumn(tableRecords.Children[i]) == column)
+                UIElement tableItem = tableItems[i];
+                int tableItemColumn = Grid.GetColumn(tableItem);
+                bool isColumnMatches = tableItemColumn == column;
+                if (isColumnMatches)
                 {
-                    tableRecords.Children.RemoveAt(i);
+                    records.Add(tableItem);
                 }
             }
             tableRecords.ColumnDefinitions.RemoveAt(column);
+            foreach (var record in records)
+            {
+                tableRecords.Children.Remove(record);
+            }
+            foreach (UIElement record in tableRecords.Children)
+            {
+                int currentColumn = Grid.GetColumn(record);
+                bool isColumnAfterModified = currentColumn > column;
+                if (isColumnAfterModified)
+                {
+                    int previousColumn = currentColumn - 1;
+                    Grid.SetColumn(record, previousColumn);
+                    bool isTextBlock = record is TextBlock;
+                    if (isTextBlock)
+                    {
+                        TextBlock columnLabel = record as TextBlock;
+                        ContextMenu menu = columnLabel.ContextMenu;
+                        ItemCollection menuItems = menu.Items;
+                        object firstMenuItem = menuItems[0];
+                        MenuItem removeMenuItem = ((MenuItem)(firstMenuItem));
+                        removeMenuItem.DataContext = ((int)(currentColumn));
+                    }
+                }
+            }
+        }
+
+        private void CloseDBHandler(object sender, RoutedEventArgs e)
+        {
+            CloseDB();
+        }
+
+        public void CloseDB()
+        {
+            ClearArticleContent();
+            screenControl.SelectedIndex = 0;
+            bool isConnectionOpened = connection != null;
+            if (isConnectionOpened)
+            {
+                connection.Close();
+            }
         }
 
     }

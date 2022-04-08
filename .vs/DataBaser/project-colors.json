@@ -5,6 +5,11 @@
       "ProjectGuid": "ecf08490-b5c9-46dc-9ec7-fd422da6cd35",
       "DisplayName": "DataBaser",
       "ColorIndex": 0
+    },
+    "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3": {
+      "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
+      "DisplayName": "Прочие файлы",
+      "ColorIndex": -1
     }
   },
   "NextColorIndex": 1
