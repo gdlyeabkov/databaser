@@ -10,11 +10,11 @@ none
 false
 DEBUG;TRACE
 C:\wpf_projects\DataBaser\DataBaser\App.xaml
-1219584333
+2-278098492
 
-51579654133
+61565486878
 22241044046
-MainWindow.xaml;
+Dialogs\CreateTableDialog.xaml;MainWindow.xaml;
 
 False
 

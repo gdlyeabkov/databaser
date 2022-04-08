@@ -28,3 +28,5 @@ C:\wpf_projects\DataBaser\DataBaser\bin\Debug\MaterialDesignThemes.Wpf.dll
 C:\wpf_projects\DataBaser\DataBaser\bin\Debug\MaterialDesignColors.pdb
 C:\wpf_projects\DataBaser\DataBaser\bin\Debug\MaterialDesignThemes.Wpf.pdb
 C:\wpf_projects\DataBaser\DataBaser\bin\Debug\MaterialDesignThemes.Wpf.xml
+C:\wpf_projects\DataBaser\DataBaser\obj\Debug\Dialogs\CreateTableDialog.g.cs
+C:\wpf_projects\DataBaser\DataBaser\obj\Debug\Dialogs\CreateTableDialog.baml

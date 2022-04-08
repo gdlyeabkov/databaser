@@ -1,0 +1,27 @@
+﻿<Window x:Class="DataBaser.Dialogs.CreateTableDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DataBaser.Dialogs"
+        mc:Ignorable="d"
+        Title="Создание новой таблицы"
+        Height="250"
+        Width="800"
+    >
+    <DockPanel>
+        <StackPanel>
+            <TextBox
+                x:Name="tableNameBox"
+                Margin="5"
+                Width="275"    
+            />
+            <Button
+                Margin="5"
+                Width="175"
+                Content="Создать"
+                Click="CreateTableHandler"
+            />
+        </StackPanel>
+    </DockPanel>
+</Window>

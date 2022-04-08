@@ -21,13 +21,21 @@
                     Header="Создать базу данных"    
                     Click="CreateDBHandler"
                 />
+                <MenuItem
+                    Header="Открыть базу данных"    
+                    Click="OpenDBHandler"
+                />
+                <MenuItem
+                    Header="Сохранить базу данных"    
+                    Click="SaveDBHandler"
+                />
             </MenuItem>
             <MenuItem
                 Header="База данных"    
             >
                 <MenuItem
                     Header="Создать таблицу"    
-                    Click="CreateTableHandler"
+                    Click="OpenCreateTableDialogHandler"
                 />
             </MenuItem>
             <MenuItem
@@ -49,6 +57,10 @@
                     Header="Удалить запись"    
                     Click="DeleteRecordHandler"
                 />
+                <MenuItem
+                    Header="Закрыть таблицу"    
+                    Click="CloseTableHandler"
+                />
             </MenuItem>
         </Menu>
         <DockPanel
@@ -59,35 +71,24 @@
                 DockPanel.Dock="Left"
                 Width="250"
                 Background="Red"
+                Visibility="Collapsed"
             >
                 
             </StackPanel>
-            <Grid
-                x:Name="tableRecords"
-                ShowGridLines="True"
+            <ScrollViewer
+                HorizontalScrollBarVisibility="Visible"
+                VerticalScrollBarVisibility="Visible"
             >
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <TextBlock
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    Text="asd"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Center"
-                />
-            </Grid>
+                <Grid
+                    x:Name="tableRecords"
+                    ShowGridLines="True"
+                >
+                    <Grid.ColumnDefinitions>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                    </Grid.RowDefinitions>
+                </Grid>
+            </ScrollViewer>
         </DockPanel>
     </DockPanel>
 </Window>
