@@ -34,6 +34,7 @@ namespace DataBaser
         public bool isDetectChanges = false;
         public bool isRelationSet = false;
         public Line relation = null;
+        public string filterColumn = "";
 
         public MainWindow()
         {
@@ -359,7 +360,16 @@ namespace DataBaser
         public void SelectTableInEditMode(string tableName)
         {
             ClearArticleContent();
-            string sql = "SELECT * FROM " + tableName;
+            int filterColumnLength = filterColumn.Length;
+            bool isFilterEnabled = filterColumnLength >= 1;
+            string filterExpression = "";
+            if (isFilterEnabled)
+            {
+                string filterAction = " ORDER BY ";
+                string filterDirection = " DESC";
+                filterExpression = filterAction + filterColumn + filterDirection;
+            }
+            string sql = "SELECT * FROM " + tableName + filterExpression;
             SQLiteCommand command = new SQLiteCommand(sql, connection);
             SQLiteDataReader reader = command.ExecuteReader();
             RowDefinition tableRow = new RowDefinition();
@@ -371,13 +381,27 @@ namespace DataBaser
                 ColumnDefinition tableColumn = new ColumnDefinition();
                 tableColumn.Width = new GridLength(275);
                 tableRecords.ColumnDefinitions.Add(tableColumn);
+                StackPanel tableColumnPanel = new StackPanel();
+                tableColumnPanel.Orientation = Orientation.Horizontal;
+                tableColumnPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                tableColumnPanel.VerticalAlignment = VerticalAlignment.Center;
                 TextBlock tableColumnLabel = new TextBlock();
-                tableColumnLabel.HorizontalAlignment = HorizontalAlignment.Center;
-                tableColumnLabel.VerticalAlignment = VerticalAlignment.Center;
                 tableColumnLabel.Text = columnName;
-                tableRecords.Children.Add(tableColumnLabel);
-                Grid.SetRow(tableColumnLabel, 0);
-                Grid.SetColumn(tableColumnLabel, i);
+                tableColumnPanel.Children.Add(tableColumnLabel);
+                bool isColumnsMatches = filterColumn == columnName;
+                bool isAddFilterIcon = isFilterEnabled && isColumnsMatches;
+                if (isAddFilterIcon)
+                {
+                    PackIcon tableColumnFilterIcon = new PackIcon();
+                    tableColumnFilterIcon.Margin = new Thickness();
+                    tableColumnFilterIcon.Kind = PackIconKind.ArrowDropDown;
+                    tableColumnPanel.Children.Add(tableColumnFilterIcon);
+                }
+                tableRecords.Children.Add(tableColumnPanel);
+                Grid.SetRow(tableColumnPanel, 0);
+                Grid.SetColumn(tableColumnPanel, i);
+                tableColumnLabel.DataContext = false;
+                tableColumnLabel.MouseLeftButtonUp += ToggleFilterHandler;
             }
 
             while (reader.Read())
@@ -1037,6 +1061,28 @@ namespace DataBaser
                     }
                 }
             }
+        }
+
+        public void ToggleFilterHandler(object sender, MouseEventArgs e)
+        {
+            TextBlock header = ((TextBlock)(sender));
+            string headerTextContent = header.Text;
+            ToggleFilter(headerTextContent);
+        }
+
+        public void ToggleFilter(string content)
+        {
+            int filterColumnLength = filterColumn.Length;
+            bool isFilterEnabled = filterColumnLength <= 0;
+            if (isFilterEnabled)
+            {
+                filterColumn = content;
+            }
+            else
+            {
+                filterColumn = "";
+            }
+            SelectTableInEditMode(currentTable);
         }
 
     }
