@@ -47,6 +47,10 @@
                 Header="Таблица"    
             >
                 <MenuItem
+                    Header="Поиск в таблице"    
+                    Click="OpenSearchInTableDialogHandler"
+                />
+                <MenuItem
                     Header="Закрыть таблицу"    
                     Click="CloseTableHandler"
                 />

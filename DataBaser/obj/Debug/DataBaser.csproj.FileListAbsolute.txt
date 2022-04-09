@@ -30,3 +30,5 @@ C:\wpf_projects\DataBaser\DataBaser\bin\Debug\MaterialDesignThemes.Wpf.pdb
 C:\wpf_projects\DataBaser\DataBaser\bin\Debug\MaterialDesignThemes.Wpf.xml
 C:\wpf_projects\DataBaser\DataBaser\obj\Debug\Dialogs\CreateTableDialog.g.cs
 C:\wpf_projects\DataBaser\DataBaser\obj\Debug\Dialogs\CreateTableDialog.baml
+C:\wpf_projects\DataBaser\DataBaser\obj\Debug\Dialogs\SearchInTableDialog.g.cs
+C:\wpf_projects\DataBaser\DataBaser\obj\Debug\Dialogs\SearchInTableDialog.baml

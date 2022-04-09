@@ -34,7 +34,9 @@ namespace DataBaser
         public bool isDetectChanges = false;
         public bool isRelationSet = false;
         public Line relation = null;
+        public string sortColumn = "";
         public string filterColumn = "";
+        public string filterKeywords = "";
 
         public MainWindow()
         {
@@ -360,16 +362,24 @@ namespace DataBaser
         public void SelectTableInEditMode(string tableName)
         {
             ClearArticleContent();
+            int sortColumnLength = sortColumn.Length;
+            bool isSortEnabled = sortColumnLength >= 1;
+            string sortExpression = "";
+            if (isSortEnabled)
+            {
+                string sortAction = " ORDER BY ";
+                string sortDirection = " DESC";
+                sortExpression = sortAction + sortColumn + sortDirection;
+            }
+            int filterKeywordsLength = filterKeywords.Length;
             int filterColumnLength = filterColumn.Length;
-            bool isFilterEnabled = filterColumnLength >= 1;
+            bool isFilterEnabled = filterKeywordsLength >= 1 && filterColumnLength >= 1;
             string filterExpression = "";
             if (isFilterEnabled)
             {
-                string filterAction = " ORDER BY ";
-                string filterDirection = " DESC";
-                filterExpression = filterAction + filterColumn + filterDirection;
+                filterExpression = " WHERE " + filterColumn + " LIKE " + filterKeywords;
             }
-            string sql = "SELECT * FROM " + tableName + filterExpression;
+            string sql = "SELECT * FROM " + tableName + filterExpression + sortExpression;
             SQLiteCommand command = new SQLiteCommand(sql, connection);
             SQLiteDataReader reader = command.ExecuteReader();
             RowDefinition tableRow = new RowDefinition();
@@ -388,7 +398,7 @@ namespace DataBaser
                 TextBlock tableColumnLabel = new TextBlock();
                 tableColumnLabel.Text = columnName;
                 tableColumnPanel.Children.Add(tableColumnLabel);
-                bool isColumnsMatches = filterColumn == columnName;
+                bool isColumnsMatches = sortColumn == columnName;
                 bool isAddFilterIcon = isFilterEnabled && isColumnsMatches;
                 if (isAddFilterIcon)
                 {
@@ -692,12 +702,7 @@ namespace DataBaser
                                     if (isDateSelected)
                                     {
                                         DateTime date = selectedDate.Value;
-                                        // ((DateTime?)(recordBox.SelectedDate));
-                                        // recordBoxContent = date.ToLongDateString();
-                                        // recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day + " 00:00:00.000";
-                                        // recordBoxContent = date.Day + "/" + date.Month + "/" + date.Year;
-                                        recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day + " 10:05:23.187";
-                                        // recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day;
+                                        recordBoxContent = date.Year + "-" + date.Month + "-" + date.Day + " 00:00:00.000";
                                     }
                                 }
                                 values += separator + recordBoxContent + separator + ", ";
@@ -927,7 +932,7 @@ namespace DataBaser
             OpenRelationShipChart();
         }
 
-        public void OpenRelationShipChart ()
+        public void OpenRelationShipChart()
         {
             relationShip.Children.Clear();
             article.SelectedIndex = 1;
@@ -989,7 +994,7 @@ namespace DataBaser
             }
         }
 
-        public void MoveTableHandler (object sender, MouseEventArgs e)
+        public void MoveTableHandler(object sender, MouseEventArgs e)
         {
             Rectangle table = ((Rectangle)(sender));
             MoveTableHandler(table, e);
@@ -1030,7 +1035,7 @@ namespace DataBaser
 
         private void ResetRelationShipHandler(object sender, MouseButtonEventArgs e)
         {
-            
+
         }
 
         private void SetRelationShipHandler(object sender, RoutedEventArgs e)
@@ -1072,16 +1077,51 @@ namespace DataBaser
 
         public void ToggleFilter(string content)
         {
-            int filterColumnLength = filterColumn.Length;
-            bool isFilterEnabled = filterColumnLength <= 0;
-            if (isFilterEnabled)
+            int sortColumnLength = sortColumn.Length;
+            bool isSortEnabled = sortColumnLength <= 0;
+            if (isSortEnabled)
             {
-                filterColumn = content;
+                sortColumn = content;
             }
             else
             {
-                filterColumn = "";
+                sortColumn = "";
             }
+            SelectTableInEditMode(currentTable);
+        }
+
+        private void OpenSearchInTableDialogHandler(object sender, RoutedEventArgs e)
+        {
+            OpenSearchInTableDialog();
+        }
+
+
+        public void OpenSearchInTableDialog ()
+        {
+            Dialogs.SearchInTableDialog dialog = new Dialogs.SearchInTableDialog(connection, currentTable);
+            dialog.Closed += SearchInTableHandler;
+            dialog.Show();
+        }
+
+        public void SearchInTableHandler (object sender, EventArgs e)
+        {
+            Window dialog = ((Window)(sender));
+            object dialogData = dialog.DataContext;
+            bool isDialogDataExists = dialogData != null;
+            if (isDialogDataExists)
+            {
+                // string searchContent = ((string)(dialogData));
+                Dictionary<String, Object> dialogDataItems = ((Dictionary<String, Object>)(dialogData));
+                string column = ((string)(dialogDataItems["column"]));
+                string searchContent = ((string)(dialogDataItems["keywords"]));
+                SearchInTable(column, searchContent);
+            }
+        }
+
+        public void SearchInTable(string column, string keywords)
+        {
+            filterColumn = column;
+            filterKeywords = keywords;
             SelectTableInEditMode(currentTable);
         }
 

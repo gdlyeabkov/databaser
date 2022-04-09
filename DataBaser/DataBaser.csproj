@@ -85,6 +85,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Dialogs\SearchInTableDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -95,6 +99,9 @@
     </Compile>
     <Compile Include="Dialogs\CreateTableDialog.xaml.cs">
       <DependentUpon>CreateTableDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\SearchInTableDialog.xaml.cs">
+      <DependentUpon>SearchInTableDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
